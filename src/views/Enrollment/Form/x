@@ -1,0 +1,170 @@
+import React, { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { MdAdd, MdKeyboardArrowLeft } from 'react-icons/md';
+import { Form, Input } from '@rocketseat/unform';
+import * as Yup from 'yup';
+import { parseISO, format } from 'date-fns';
+import pt from 'date-fns/locale/pt';
+
+import { formatPrice } from '../../../components/util/format';
+import api from '../../../services/api';
+import {
+    FormHeader,
+    Title,
+    Buttons,
+    ContainerBody,
+    Row,
+    Column,
+} from '../../../styles/form';
+import { postInRequest, editInRequest } from '../../../store/modules/enrollment/actions';
+import { Container } from './styles';
+
+export default function Enrollment({ location, match }) {
+    const dispatch = useDispatch();
+
+    const {id} = match.params;
+    const state = (location.state) ? location.state.enrollment :[];
+
+    const [enrollment, setEnrollment] = useState(state);
+// const [temp1, setTemp1] = useState([]);
+    const initialData = {
+        ...state,
+        start_date: enrollment.student ? format(
+            parseISO(enrollment.start_date),
+            "dd'/'MM'/'yyyy",
+            {
+                locale: pt,
+            }
+        ) : "",
+        end_date: enrollment.student ? format(
+            parseISO(enrollment.end_date),
+            "dd'/'MM'/'yyyy",
+            {
+                locale: pt,
+            }
+        ) : "",
+    };
+
+    const priceTotal = useMemo(() => {
+        return formatPrice(enrollment.price * enrollment.duration);
+    }, [enrollment]);
+
+  /*
+    useEffect(() => {
+        async function getPlans() {
+            const response = await api.get('plans');
+
+            const dataPlan = response.data.map(plan => {
+                return {
+                  ...plan,
+                  priceFormatted: formatPrice(plan.price),
+                };
+              });
+
+            setPlan(dataPlan);
+        }
+        getPlans();
+    }, []);
+    const titlePlan = useMemo(() => {
+        const { title } = temp1;
+        const plans = plan.map(plan => {
+            if (plan.title == title){
+                return plan;
+            }
+        });
+        return plans;
+
+    }, [temp1, plan]);
+    setTemp(titlePlan);*/
+
+    async function handleSubmit({ ...data }) {
+        if (id) {
+            edit(data);
+        } else {
+            post(data);
+        }
+    }
+
+    function post({ ...data }) {
+        dispatch(postInRequest(data));
+    }
+
+    function edit({ ...data }) {
+        dispatch(editInRequest({ ...data, id: enrollment.id }));
+    }
+    return (
+        <Container>
+            <Form initialData={initialData} onSubmit={handleSubmit}>
+                <FormHeader>
+                    <Title>
+                        <strong>
+                         {id ? 'Edição de matrícula' : 'Cadastro de matrícula'}
+                        </strong>
+                    </Title>
+                    <Buttons>
+                        <Link to="/matriculas" className="back">
+                            <MdKeyboardArrowLeft size={20} color="#FFF" />
+                            <span>Voltar</span>
+                        </Link>
+                        <button type="submit" className="btnSave">
+                            <MdAdd size={20} color="#FFF" />
+                            <span>Salvar</span>
+                        </button>
+                    </Buttons>
+                </FormHeader>
+                <ContainerBody>
+                    <Row>
+                        <Column>
+                            <Input
+                                style={{width: '100%'}}
+                                type="text"
+                                name="student"
+                                label="Aluno"
+                            />
+                        </Column>
+                    </Row>
+
+                    <Row>
+                        <Column>
+                            <Input
+                                style={{}}
+                                type="text"
+                                name="plan"
+                                label="Plano"
+                            />
+                        </Column>
+
+                        <Column>
+                            <Input
+                                style={{}}
+                                type="date"
+                                name="start_date"
+                                label="Data de inicio"
+                            />
+                        </Column>
+
+                        <Column>
+                            <Input
+                                style={{}}
+                                type="date"
+                                name="end_date"
+                                label="Data de termino"
+                            />
+                        </Column>
+
+                        <Column>
+                            <Input
+                                style={{backgroundColor: '#e9e9e9'}}
+                                type="text"
+                                name="priceTotal"
+                                label="Valor final"
+                                value={priceTotal}
+                            />
+                        </Column>
+                    </Row>
+                </ContainerBody>
+            </Form>
+        </Container>
+    );
+}
